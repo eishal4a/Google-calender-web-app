@@ -504,3 +504,8 @@ button.delete:hover {
   margin: 16px;
   align-self: center;
 }
+.profile-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}

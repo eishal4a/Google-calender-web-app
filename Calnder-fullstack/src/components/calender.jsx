@@ -120,6 +120,10 @@ useEffect(() => {
 const handleSaveEvent = async (ev) => {
   ev.preventDefault();
   if (!selectedSlot) return;
+const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+const res = form._id
+  ? await axios.put(`${BACKEND}/api/events/${form._id}`, payload, { headers })
+  : await axios.post(`${BACKEND}/api/events`, payload, { headers });
 
   const payload = {
     title: form.title,
@@ -222,10 +226,15 @@ const handleSaveEvent = async (ev) => {
             <input type="text" placeholder="Search" className="search-bar" />
           </div>
         </div>
-        <div className="header-right">
-          <AppsIcon style={{ fontSize: 26, cursor: "pointer" }} />
-          <AccountCircleIcon style={{ fontSize: 32, color: "#5f6368" }} />
-        </div>
+       <div className="header-right">
+  <AppsIcon style={{ fontSize: 26, cursor: "pointer" }} />
+  {user ? (
+    <img src={user.picture} alt={user.name} className="profile-img" />
+  ) : (
+    <AccountCircleIcon style={{ fontSize: 32, color: "#5f6368" }} />
+  )}
+</div>
+
       </header>
 
       <div className="body-wrapper">
@@ -350,10 +359,10 @@ const handleSaveEvent = async (ev) => {
           )}
         </main>
       </div>
-   <button
+<button
   className="google-btn"
   onClick={() =>
-    window.location.href = "https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/auth/google"
+    window.location.href = `${BACKEND}/api/auth/google`
   }
 >
   Connect Google Calendar
