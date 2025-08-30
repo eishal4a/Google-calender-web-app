@@ -6,10 +6,7 @@ import SmallCalendar from "react-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-calendar/dist/Calendar.css";
 import "./calender.css";
-
 import YearView from '../components/yearview'; 
-
-// Icons
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import AppsIcon from "@mui/icons-material/Apps";
@@ -19,7 +16,6 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
 
 const localizer = momentLocalizer(moment);
-
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null); 
