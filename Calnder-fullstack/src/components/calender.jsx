@@ -23,7 +23,6 @@ const localizer = momentLocalizer(moment);
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const [form, setForm] = useState({ title: "", description: "" });
   const [date, setDate] = useState(new Date());
   const [visibleCalendars, setVisibleCalendars] = useState({});
   const [currentView, setCurrentView] = useState(Views.WEEK);
@@ -56,33 +55,67 @@ useEffect(() => {
       console.error(err);
     }
   };
+const [form, setForm] = useState({
+  title: "",
+  description: "",
+  guests: "",
+  location: "",
+  type: "event",
+  color: "#1a73e8",
+});
 
   const handleSelectSlot = (slot) => {
     setSelectedSlot(slot);
     setForm({ title: "", description: "" });
   };
-
-  const handleAddEvent = async (e) => {
-    e.preventDefault();
-    if (!selectedSlot) return;
-
-    try {
-      const newEvent = {
-        title: form.title,
-        description: form.description,
-        start: selectedSlot.start,
-        end: selectedSlot.end,
-      };
-      const res = await axios.post("http://localhost:4000/api/events", newEvent);
-      setEvents([
-        ...events,
-        { ...res.data, start: new Date(res.data.start), end: new Date(res.data.end) },
-      ]);
-      setSelectedSlot(null);
-    } catch (err) {
-      console.error(err);
+  const tileContent = ({ date, view }) => {
+  if (view === "month") {
+    const dayEvents = filteredEvents.filter(
+      e =>
+        moment(date).isSame(e.start, "day") ||
+        moment(date).isBetween(e.start, e.end, "day", "[]")
+    );
+    if (dayEvents.length > 0) {
+      return <div className="event-dot" />;
     }
+  }
+};
+const handleAddEvent = async (e) => {
+  e.preventDefault();
+  if (!selectedSlot) return;
+
+  const newEvent = {
+    title: form.title,
+    description: form.description,
+    guests: form.guests,
+    location: form.location,
+    type: form.type,
+    color: form.color,
+    start: selectedSlot.start,
+    end: selectedSlot.end,
   };
+
+  // show immediately
+  setEvents([...events, newEvent]);
+
+  try {
+    await axios.post("http://localhost:4000/api/events", newEvent);
+  } catch (err) {
+    console.error("Error saving:", err);
+  }
+
+  // ✅ Close popup immediately + reset form
+  setSelectedSlot(null);
+  setForm({
+    title: "",
+    description: "",
+    guests: "",
+    location: "",
+    type: "event",
+    color: "#1a73e8",
+  });
+};
+
 
   return (
     <div className="calendar-wrapper">
@@ -138,16 +171,30 @@ useEffect(() => {
 
 
           <div className="mini-calendar">
-            <SmallCalendar onChange={setDate} value={date} />
+            <SmallCalendar
+  onChange={setDate}
+  value={date}
+  tileContent={tileContent}
+/>
+
           </div>
 
-          <h4>My calendars</h4>
-        
+         <h4>My calendars</h4>
 <div className="calendar-list">
   {events.length > 0 ? (
     events.map((event, idx) => (
       <label key={idx}>
-        <input type="checkbox" defaultChecked /> {event.title}
+        <input
+          type="checkbox"
+          checked={visibleCalendars[event.title] ?? true}
+          onChange={() =>
+            setVisibleCalendars({
+              ...visibleCalendars,
+              [event.title]: !visibleCalendars[event.title],
+            })
+          }
+        />
+        {event.title}
       </label>
     ))
   ) : (
@@ -160,6 +207,7 @@ useEffect(() => {
   )}
 </div>
 
+
         </aside>
 
         {/* Main */}
@@ -167,19 +215,19 @@ useEffect(() => {
           <div className="toolbar">
             <div className="toolbar-left">
               <button className="today" onClick={() => setDate(new Date())}>Today</button>
-              <button onClick={() => setDate(moment(date).subtract(1, "month").toDate())}>
+              <button onClick={() => setDate(moment(date).subtract(1, "month").toDate())} className="cclrs">
                 <ChevronLeftIcon fontSize="small" />
               </button>
-              <button onClick={() => setDate(moment(date).add(1, "month").toDate())}>
+              <button onClick={() => setDate(moment(date).add(1, "month").toDate())}className="cclrs">
                 <ChevronRightIcon fontSize="small" />
               </button>
               <span className="month-label">{moment(date).format("MMMM YYYY")}</span>
             </div>
             <div className="toolbar-right">
-              <button onClick={() => setCurrentView(Views.DAY)}>Day</button>
-              <button onClick={() => setCurrentView(Views.WEEK)}>Week</button>
-              <button onClick={() => setCurrentView(Views.MONTH)}>Month</button>
-              <button onClick={() => setCurrentView("year")}>Year</button> {/* 👈 NEW */}
+              <button onClick={() => setCurrentView(Views.DAY)}className="cclrs">Day</button>
+              <button onClick={() => setCurrentView(Views.WEEK)}className="cclrs">Week</button>
+              <button onClick={() => setCurrentView(Views.MONTH)}className="cclrs">Month</button>
+              <button onClick={() => setCurrentView("year")}className="cclrs">Year</button> {/* 👈 NEW */}
             </div>
           </div>
 
@@ -187,9 +235,9 @@ useEffect(() => {
           {currentView === "year" ? (
             <YearView date={date} onChange={setDate} />
           ) : (
-            <BigCalendar
+<BigCalendar
   localizer={localizer}
-  events={filteredEvents}
+  events={events}
   selectable
   startAccessor="start"
   endAccessor="end"
@@ -199,7 +247,30 @@ useEffect(() => {
   onNavigate={setDate}
   onSelectSlot={handleSelectSlot}
   style={{ flex: 1 }}
+  eventPropGetter={(event) => ({
+    style: {
+      backgroundColor: event.color || "#1a73e8",
+      borderRadius: "6px",
+      color: "white",
+      border: "none",
+      padding: "4px 6px",
+      fontSize: "13px",
+    },
+  })}
+  components={{
+    event: ({ event }) => (
+      <div>
+        <div style={{ fontWeight: "600", fontSize: "13px" }}>
+          {event.title}
+        </div>
+        <div style={{ fontSize: "11px", opacity: 0.9 }}>
+          {moment(event.start).format("h:mm A")} – {moment(event.end).format("h:mm A")}
+        </div>
+      </div>
+    ),
+  }}
 />
+
 
           )}
         </main>
@@ -210,28 +281,93 @@ useEffect(() => {
         <AddIcon style={{ fontSize: 28 }} />
       </button>
 
-      {/* Event Popup */}
-      {selectedSlot && (
-        <div className="event-popup">
-          <h3>Add Event</h3>
-          <form onSubmit={handleAddEvent}>
-            <input
-              type="text"
-              placeholder="Event title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              required
-            />
-            <textarea
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-            <button className="save" type="submit">Save</button>
-            <button className="cancel" type="button" onClick={() => setSelectedSlot(null)}>Cancel</button>
-          </form>
-        </div>
-      )}
+   {/* Event Popup */}
+{selectedSlot && (
+  <div className="event-popup">
+    <h3>Add Event</h3>
+    <form onSubmit={handleAddEvent}>
+      {/* Title */}
+      <input
+        type="text"
+        placeholder="Event title"
+        value={form.title}
+        onChange={(e) => setForm({ ...form, title: e.target.value })}
+        required
+      />
+
+      {/* Date & Time */}
+      <div className="datetime-row">
+        <label>Start:</label>
+        <input
+          type="datetime-local"
+          value={moment(selectedSlot.start).format("YYYY-MM-DDTHH:mm")}
+          onChange={(e) =>
+            setSelectedSlot({ ...selectedSlot, start: new Date(e.target.value) })
+          }
+        />
+      </div>
+      <div className="datetime-row">
+        <label>End:</label>
+        <input
+          type="datetime-local"
+          value={moment(selectedSlot.end).format("YYYY-MM-DDTHH:mm")}
+          onChange={(e) =>
+            setSelectedSlot({ ...selectedSlot, end: new Date(e.target.value) })
+          }
+        />
+      </div>
+
+      {/* Guests */}
+      <input
+        type="text"
+        placeholder="Add guests (comma separated emails)"
+        value={form.guests || ""}
+        onChange={(e) => setForm({ ...form, guests: e.target.value })}
+      />
+
+      {/* Location */}
+      <input
+        type="text"
+        placeholder="Location"
+        value={form.location || ""}
+        onChange={(e) => setForm({ ...form, location: e.target.value })}
+      />
+
+      {/* Description */}
+      <textarea
+        placeholder="Description"
+        value={form.description}
+        onChange={(e) => setForm({ ...form, description: e.target.value })}
+      />
+
+      {/* Event Type */}
+      <select
+        value={form.type || "event"}
+        onChange={(e) => setForm({ ...form, type: e.target.value })}
+      >
+        <option value="event">📅 Event</option>
+        <option value="task">✅ Task</option>
+        <option value="appointment">🕑 Appointment</option>
+      </select>
+
+      {/* Color Picker */}
+      <div className="color-picker">
+        <label>Event Color:</label>
+        <input
+          type="color"
+          value={form.color || "#1a73e8"}
+          onChange={(e) => setForm({ ...form, color: e.target.value })}
+        />
+      </div>
+
+      {/* Buttons */}
+      <button className="save" type="submit">Save</button>
+      <button className="cancel" type="button" onClick={() => setSelectedSlot(null)}>Cancel</button>
+    </form>
+  </div>
+)}
+
+      
     </div>
   );
 };
