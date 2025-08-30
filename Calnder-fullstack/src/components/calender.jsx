@@ -80,6 +80,26 @@ const [form, setForm] = useState({
     }
   }
 };
+
+const handleSelectEvent = (event) => {
+  setSelectedSlot({
+    start: event.start,
+    end: event.end,
+    isEditing: true,
+  });
+
+  setForm({
+    title: event.title,
+    description: event.description,
+    guests: event.guests,
+    location: event.location,
+    type: event.type,
+    color: event.color,
+  });
+};
+
+
+
 const handleAddEvent = async (e) => {
   e.preventDefault();
   if (!selectedSlot) return;
@@ -250,6 +270,7 @@ const handleAddEvent = async (e) => {
   date={date}
   onNavigate={setDate}
   onSelectSlot={handleSelectSlot}
+  onSelectEvent={handleSelectEvent}   // 👈 add this
   style={{ flex: 1 }}
   eventPropGetter={(event) => ({
     style: {
@@ -261,17 +282,16 @@ const handleAddEvent = async (e) => {
       fontSize: "13px",
     },
   })}
-components={{
-  event: ({ event }) => (
-    <div className="custom-event">
-      <div className="event-title">{event.title}</div>
-      <div className="event-time">
-        {moment(event.start).format("h:mm A")} – {moment(event.end).format("h:mm A")}
+  components={{
+    event: ({ event }) => (
+      <div className="custom-event">
+        <div className="event-title">{event.title}</div>
+        <div className="event-time">
+          {moment(event.start).format("h:mm A")} – {moment(event.end).format("h:mm A")}
+        </div>
       </div>
-    </div>
-  ),
-}}
-
+    ),
+  }}
 />
 
 
@@ -287,7 +307,8 @@ components={{
    {/* Event Popup */}
 {selectedSlot && (
   <div className="event-popup">
-    <h3>Add Event</h3>
+   <h3>{selectedSlot?.isEditing ? "Edit Event" : "Add Event"}</h3>
+
     <form onSubmit={handleAddEvent}>
       {/* Title */}
       <input
