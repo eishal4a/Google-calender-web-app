@@ -359,10 +359,10 @@ const res = form._id
           )}
         </main>
       </div>
-<button
+   <button
   className="google-btn"
   onClick={() =>
-    window.location.href = `${BACKEND}/api/auth/google`
+    window.location.href = "https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/auth/google"
   }
 >
   Connect Google Calendar
