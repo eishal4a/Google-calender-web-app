@@ -469,7 +469,6 @@ body {
   font-size: 11px;
   opacity: 0.9;
 }
-
 /* Make event show only title */
 .rbc-event-content {
   font-size: 13px;
@@ -477,4 +476,9 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.rbc-event{
+justify-content: center;
+  height: 4% !important;
+align-items: flex-start;
 }

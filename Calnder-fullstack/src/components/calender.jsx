@@ -95,17 +95,13 @@ const handleAddEvent = async (e) => {
     end: selectedSlot.end,
   };
 
-  // show immediately
+  // Add immediately to frontend
   setEvents([...events, newEvent]);
 
-  try {
-    await axios.post("http://localhost:4000/api/events", newEvent);
-  } catch (err) {
-    console.error("Error saving:", err);
-  }
-
-  // ✅ Close popup immediately + reset form
+  // ✅ Close popup first
   setSelectedSlot(null);
+
+  // Reset form
   setForm({
     title: "",
     description: "",
@@ -114,7 +110,15 @@ const handleAddEvent = async (e) => {
     type: "event",
     color: "#1a73e8",
   });
+
+  // Save to backend (async)
+  try {
+    await axios.post("http://localhost:4000/api/events", newEvent);
+  } catch (err) {
+    console.error("Error saving:", err);
+  }
 };
+
 
 
   return (
@@ -257,18 +261,17 @@ const handleAddEvent = async (e) => {
       fontSize: "13px",
     },
   })}
-  components={{
-    event: ({ event }) => (
-      <div>
-        <div style={{ fontWeight: "600", fontSize: "13px" }}>
-          {event.title}
-        </div>
-        <div style={{ fontSize: "11px", opacity: 0.9 }}>
-          {moment(event.start).format("h:mm A")} – {moment(event.end).format("h:mm A")}
-        </div>
+components={{
+  event: ({ event }) => (
+    <div className="custom-event">
+      <div className="event-title">{event.title}</div>
+      <div className="event-time">
+        {moment(event.start).format("h:mm A")} – {moment(event.end).format("h:mm A")}
       </div>
-    ),
-  }}
+    </div>
+  ),
+}}
+
 />
 
 
