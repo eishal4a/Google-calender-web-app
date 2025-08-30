@@ -22,13 +22,13 @@ const localizer = momentLocalizer(moment);
 
 const Calendar = () => {
   const [events, setEvents] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null); // when truthy, popup opens
+  const [selectedSlot, setSelectedSlot] = useState(null); 
   const [date, setDate] = useState(new Date());
   const [visibleCalendars, setVisibleCalendars] = useState({});
   const [currentView, setCurrentView] = useState(Views.WEEK);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // form holds editable fields and also _id when editing an existing DB event
+  
   const [form, setForm] = useState({
     _id: undefined,
     title: "",
@@ -45,7 +45,7 @@ const Calendar = () => {
     fetchEvents();
   }, []);
 
-  // initialize visibleCalendars when events are loaded
+
   useEffect(() => {
     if (events.length > 0) {
       const init = {};
@@ -56,8 +56,8 @@ const Calendar = () => {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get("http://localhost:4000/api/events");
-      // expect res.data = array of events with _id, title, start, end, etc.
+      const res = await axios.get("https://33e74e48-bc84-4327-b48c-f71b48634054-00-9qjgpeer80xz.pike.replit.dev/api/events");
+      
       setEvents(
         res.data.map((e) => ({
           ...e,
@@ -70,7 +70,7 @@ const Calendar = () => {
     }
   };
 
-  // clicking empty slot
+
   const handleSelectSlot = (slot) => {
     setSelectedSlot({
       start: slot.start,
@@ -88,7 +88,6 @@ const Calendar = () => {
     });
   };
 
-  // clicking existing event
   const handleSelectEvent = (event) => {
     setSelectedSlot({
       start: event.start,
@@ -97,7 +96,7 @@ const Calendar = () => {
     });
 
     setForm({
-      _id: event._id, // important: track DB id
+      _id: event._id, 
       title: event.title || "",
       description: event.description || "",
       guests: event.guests || "",
@@ -125,23 +124,23 @@ const handleSaveEvent = async (ev) => {
   try {
     let createdOrUpdated;
     if (form._id) {
-      console.log("🔄 Updating event:", form._id, payload);
-      const res = await axios.put(`http://localhost:4000/api/events/${form._id}`, payload);
+      console.log(" Updating event:", form._id, payload);
+      const res = await axios.put(`https://33e74e48-bc84-4327-b48c-f71b48634054-00-9qjgpeer80xz.pike.replit.dev/api/events/${form._id}`, payload);
       createdOrUpdated = res.data || { ...payload, _id: form._id };
       setEvents(events.map(evnt => evnt._id === form._id ? { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) } : evnt));
     } else {
-      console.log("➕ Creating event:", payload);
-      const res = await axios.post("http://localhost:4000/api/events", payload);
+      console.log(" Creating event:", payload);
+      const res = await axios.post("https://33e74e48-bc84-4327-b48c-f71b48634054-00-9qjgpeer80xz.pike.replit.dev/api/events", payload);
       createdOrUpdated = res.data || { ...payload, _id: String(Date.now()) };
       setEvents([...events, { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }]);
     }
   } catch (err) {
-    console.error("❌ Error saving event:", err);
-    // fallback (frontend only)
+    console.error(" Error saving event:", err);
+  
     setEvents([...events, { ...payload, _id: String(Date.now()), start: new Date(payload.start), end: new Date(payload.end) }]);
   }
 
-  // always close popup + reset form
+ 
   setSelectedSlot(null);
   setForm({
     _id: undefined,
@@ -154,17 +153,15 @@ const handleSaveEvent = async (ev) => {
   });
 };
 
-
-  // Delete event (only when editing and form._id exists)
   const handleDeleteEvent = async () => {
     if (!form._id) return;
 
     try {
-      await axios.delete(`http://localhost:4000/api/events/${form._id}`);
+      await axios.delete(`https://33e74e48-bc84-4327-b48c-f71b48634054-00-9qjgpeer80xz.pike.replit.dev/api/events/${form._id}`);
       setEvents(events.filter(evnt => evnt._id !== form._id));
     } catch (err) {
       console.error("Error deleting event:", err);
-      // fallback: remove locally anyway
+    
       setEvents(events.filter(evnt => evnt._id !== form._id));
     }
 
@@ -180,7 +177,7 @@ const handleSaveEvent = async (ev) => {
     });
   };
 
-  // mini calendar tile dot
+
   const tileContent = ({ date: tileDate, view }) => {
     if (view === "month") {
       const dayEvents = filteredEvents.filter(
@@ -221,9 +218,9 @@ const handleSaveEvent = async (ev) => {
       </header>
 
       <div className="body-wrapper">
-        {/* Sidebar */}
+  
         <aside className="sidebar">
-          {/* Sidebar Create Button with Dropdown */}
+         
           <div className="create-dropdown">
             <button
               className="create-btn"
@@ -235,13 +232,13 @@ const handleSaveEvent = async (ev) => {
             {showDropdown && (
               <div className="create-menu">
                 <div className="menu-item" onClick={() => alert("New Event")}>
-                  📅 Event
+                  Event
                 </div>
                 <div className="menu-item" onClick={() => alert("New Task")}>
-                  ✅ Task
+                  Task
                 </div>
                 <div className="menu-item" onClick={() => alert("New Appointment")}>
-                  🕑 Appointment schedule
+                  Appointment schedule
                 </div>
               </div>
             )}
@@ -271,16 +268,16 @@ const handleSaveEvent = async (ev) => {
               ))
             ) : (
               <>
-                <label><input type="checkbox" defaultChecked /> 🌍 International Holidays</label>
-                <label><input type="checkbox" defaultChecked /> 🎉 New Year’s Day</label>
-                <label><input type="checkbox" defaultChecked /> 🕌 Eid ul-Fitr</label>
-                <label><input type="checkbox" defaultChecked /> 🎄 Christmas</label>
+                <label><input type="checkbox" defaultChecked /> International Holidays</label>
+                <label><input type="checkbox" defaultChecked /> New Year’s Day</label>
+                <label><input type="checkbox" defaultChecked /> Eid ul-Fitr</label>
+                <label><input type="checkbox" defaultChecked /> Christmas</label>
               </>
             )}
           </div>
         </aside>
 
-        {/* Main */}
+       
         <main className="main">
           <div className="toolbar">
             <div className="toolbar-left">
@@ -301,7 +298,7 @@ const handleSaveEvent = async (ev) => {
             </div>
           </div>
 
-          {/* Calendar */}
+        
           {currentView === "year" ? (
             <YearView date={date} onChange={setDate} />
           ) : (
@@ -343,18 +340,18 @@ const handleSaveEvent = async (ev) => {
         </main>
       </div>
 
-      {/* Floating Button */}
+     
       <button className="floating-create-btn">
         <AddIcon style={{ fontSize: 28 }} />
       </button>
 
-      {/* Event Popup */}
+    
       {selectedSlot && (
         <div className="event-popup">
           <h3>{selectedSlot?.isEditing ? "Edit Event" : "Add Event"}</h3>
 
           <form onSubmit={handleSaveEvent}>
-            {/* Title */}
+          
             <input
               type="text"
               placeholder="Event title"
@@ -363,7 +360,7 @@ const handleSaveEvent = async (ev) => {
               required
             />
 
-            {/* Date & Time */}
+       
             <div className="datetime-row">
               <label>Start:</label>
               <input
@@ -385,7 +382,6 @@ const handleSaveEvent = async (ev) => {
               />
             </div>
 
-            {/* Guests */}
             <input
               type="text"
               placeholder="Add guests (comma separated emails)"
@@ -393,7 +389,7 @@ const handleSaveEvent = async (ev) => {
               onChange={(e) => setForm({ ...form, guests: e.target.value })}
             />
 
-            {/* Location */}
+    
             <input
               type="text"
               placeholder="Location"
@@ -401,24 +397,24 @@ const handleSaveEvent = async (ev) => {
               onChange={(e) => setForm({ ...form, location: e.target.value })}
             />
 
-            {/* Description */}
+          
             <textarea
               placeholder="Description"
               value={form.description || ""}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
 
-            {/* Event Type */}
+       
             <select
               value={form.type || "event"}
               onChange={(e) => setForm({ ...form, type: e.target.value })}
             >
-              <option value="event">📅 Event</option>
-              <option value="task">✅ Task</option>
-              <option value="appointment">🕑 Appointment</option>
+              <option value="event">Event</option>
+              <option value="task">Task</option>
+              <option value="appointment">Appointment</option>
             </select>
 
-            {/* Color Picker */}
+           
             <div className="color-picker">
               <label>Event Color:</label>
               <input
@@ -428,7 +424,7 @@ const handleSaveEvent = async (ev) => {
               />
             </div>
 
-            {/* Action buttons */}
+          
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
               <button className="save" type="submit">Save</button>
               <button className="cancel" type="button" onClick={() => setSelectedSlot(null)}>Cancel</button>
