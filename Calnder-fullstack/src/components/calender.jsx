@@ -40,6 +40,21 @@ const Calendar = () => {
   useEffect(() => {
     fetchEvents();
   }, []);
+// At top of your Calendar component
+const [user, setUser] = useState(null);
+const [accessToken, setAccessToken] = useState(null);
+
+useEffect(() => {
+  // Check URL params after redirect
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("access_token");
+  const userInfo = params.get("user");
+
+  if (token && userInfo) {
+    setAccessToken(token);
+    setUser(JSON.parse(decodeURIComponent(userInfo)));
+  }
+}, []);
 
 
   useEffect(() => {
