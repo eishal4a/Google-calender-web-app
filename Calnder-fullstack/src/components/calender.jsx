@@ -339,6 +339,10 @@ const handleSaveEvent = async (ev) => {
      
       <button className="floating-create-btn">
         <AddIcon style={{ fontSize: 28 }} />
+        <button onClick={() => window.location.href="/api/auth/google"}>
+  Connect Google Calendar
+</button>
+
       </button>
 
     
