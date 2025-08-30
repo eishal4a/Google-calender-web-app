@@ -52,7 +52,7 @@ const Calendar = () => {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get("https://741a1512-5215-4694-8196-132b83fabe49-00-19pxytwp26vdq.pike.replit.dev/api/events");
+      const res = await axios.get("https://b193635f-b072-469b-99ab-938b0f2cba56-00-ybmbsc22zlnh.pike.replit.dev/api/events");
       
       setEvents(
         res.data.map((e) => ({
@@ -121,12 +121,12 @@ const handleSaveEvent = async (ev) => {
     let createdOrUpdated;
     if (form._id) {
       console.log(" Updating event:", form._id, payload);
-      const res = await axios.put(`https://741a1512-5215-4694-8196-132b83fabe49-00-19pxytwp26vdq.pike.replit.dev/api/events/${form._id}`, payload);
+      const res = await axios.put(`https://b193635f-b072-469b-99ab-938b0f2cba56-00-ybmbsc22zlnh.pike.replit.dev/api/events/${form._id}`, payload);
       createdOrUpdated = res.data || { ...payload, _id: form._id };
       setEvents(events.map(evnt => evnt._id === form._id ? { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) } : evnt));
     } else {
       console.log(" Creating event:", payload);
-      const res = await axios.post("https://741a1512-5215-4694-8196-132b83fabe49-00-19pxytwp26vdq.pike.replit.dev/api/events", payload);
+      const res = await axios.post("https://b193635f-b072-469b-99ab-938b0f2cba56-00-ybmbsc22zlnh.pike.replit.dev/api/events", payload);
       createdOrUpdated = res.data || { ...payload, _id: String(Date.now()) };
       setEvents([...events, { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }]);
     }
@@ -153,7 +153,7 @@ const handleSaveEvent = async (ev) => {
     if (!form._id) return;
 
     try {
-      await axios.delete(`https://741a1512-5215-4694-8196-132b83fabe49-00-19pxytwp26vdq.pike.replit.dev/api/events/${form._id}`);
+      await axios.delete(`https://b193635f-b072-469b-99ab-938b0f2cba56-00-ybmbsc22zlnh.pike.replit.dev/api/events/${form._id}`);
       setEvents(events.filter(evnt => evnt._id !== form._id));
     } catch (err) {
       console.error("Error deleting event:", err);
