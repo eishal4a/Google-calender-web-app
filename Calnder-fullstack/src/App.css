@@ -4,7 +4,13 @@
   padding: 2rem;
   text-align: center;
 }
-
+iframe{
+border:solid 1px #777;
+ width:400;
+  height:700;
+  border: 0;
+  display-x: block;
+}
 .logo {
   height: 6em;
   padding: 1.5em;
