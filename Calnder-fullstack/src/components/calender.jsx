@@ -335,8 +335,12 @@ const handleSaveEvent = async (ev) => {
           )}
         </main>
       </div>
-    
-        <button className="google-btn" onClick={() => window.location.href="/api/auth/google"}>
+   <button
+  className="google-btn"
+  onClick={() =>
+    window.location.href = "https://b193635f-b072-469b-99ab-938b0f2cba56-00-ybmbsc22zlnh.pike.replit.dev/api/auth/google"
+  }
+>
   Connect Google Calendar
 </button>
 
