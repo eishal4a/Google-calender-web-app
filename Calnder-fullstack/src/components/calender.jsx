@@ -7,7 +7,9 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-calendar/dist/Calendar.css";
 import "./calender.css";
 
-// ✅ Material UI Icons
+import YearView from '../components/yearview'; 
+
+// Icons
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import AppsIcon from "@mui/icons-material/Apps";
@@ -23,7 +25,18 @@ const Calendar = () => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [form, setForm] = useState({ title: "", description: "" });
   const [date, setDate] = useState(new Date());
-  const [currentView, setCurrentView] = useState(Views.WEEK); // 👈 state for view
+  const [visibleCalendars, setVisibleCalendars] = useState({});
+  const [currentView, setCurrentView] = useState(Views.WEEK);
+const [showDropdown, setShowDropdown] = useState(false);
+const filteredEvents = events.filter(e => visibleCalendars[e.title]);
+
+useEffect(() => {
+  if (events.length > 0) {
+    const init = {};
+    events.forEach(e => { init[e.title] = true; });
+    setVisibleCalendars(init);
+  }
+}, [events]);
 
   useEffect(() => {
     fetchEvents();
@@ -84,52 +97,76 @@ const Calendar = () => {
           />
           <h1>Calendar</h1>
         </div>
-
         <div className="header-center">
           <div className="search-wrapper">
             <SearchIcon style={{ color: "#5f6368" }} />
             <input type="text" placeholder="Search" className="search-bar" />
           </div>
         </div>
-
         <div className="header-right">
           <AppsIcon style={{ fontSize: 26, cursor: "pointer" }} />
           <AccountCircleIcon style={{ fontSize: 32, color: "#5f6368" }} />
         </div>
       </header>
 
-      {/* BODY */}
       <div className="body-wrapper">
         {/* Sidebar */}
         <aside className="sidebar">
-          <button className="create-btn">+ Create</button>
+          {/* Sidebar Create Button with Dropdown */}
+<div className="create-dropdown">
+  <button
+    className="create-btn"
+    onClick={() => setShowDropdown((prev) => !prev)}
+  >
+    + Create
+  </button>
+
+  {showDropdown && (
+    <div className="create-menu">
+      <div className="menu-item" onClick={() => alert("New Event")}>
+        📅 Event
+      </div>
+      <div className="menu-item" onClick={() => alert("New Task")}>
+        ✅ Task
+      </div>
+      <div className="menu-item" onClick={() => alert("New Appointment")}>
+        🕑 Appointment schedule
+      </div>
+    </div>
+  )}
+</div>
+
 
           <div className="mini-calendar">
             <SmallCalendar onChange={setDate} value={date} />
           </div>
 
           <h4>My calendars</h4>
-          <div className="calendar-list">
-            <label>
-              <input type="checkbox" defaultChecked /> Eishal
-            </label>
-            <label>
-              <input type="checkbox" defaultChecked /> Birthdays
-            </label>
-            <label>
-              <input type="checkbox" defaultChecked /> Tasks
-            </label>
-          </div>
+        
+<div className="calendar-list">
+  {events.length > 0 ? (
+    events.map((event, idx) => (
+      <label key={idx}>
+        <input type="checkbox" defaultChecked /> {event.title}
+      </label>
+    ))
+  ) : (
+    <>
+      <label><input type="checkbox" defaultChecked /> 🌍 International Holidays</label>
+      <label><input type="checkbox" defaultChecked /> 🎉 New Year’s Day</label>
+      <label><input type="checkbox" defaultChecked /> 🕌 Eid ul-Fitr</label>
+      <label><input type="checkbox" defaultChecked /> 🎄 Christmas</label>
+    </>
+  )}
+</div>
+
         </aside>
 
         {/* Main */}
         <main className="main">
-          {/* Toolbar */}
           <div className="toolbar">
             <div className="toolbar-left">
-              <button className="today" onClick={() => setDate(new Date())}>
-                Today
-              </button>
+              <button className="today" onClick={() => setDate(new Date())}>Today</button>
               <button onClick={() => setDate(moment(date).subtract(1, "month").toDate())}>
                 <ChevronLeftIcon fontSize="small" />
               </button>
@@ -142,27 +179,33 @@ const Calendar = () => {
               <button onClick={() => setCurrentView(Views.DAY)}>Day</button>
               <button onClick={() => setCurrentView(Views.WEEK)}>Week</button>
               <button onClick={() => setCurrentView(Views.MONTH)}>Month</button>
+              <button onClick={() => setCurrentView("year")}>Year</button> {/* 👈 NEW */}
             </div>
           </div>
 
-          {/* Big Calendar */}
-          <BigCalendar
-            localizer={localizer}
-            events={events}
-            selectable
-            startAccessor="start"
-            endAccessor="end"
-            view={currentView} // 👈 use state
-            onView={setCurrentView} // update state when user switches
-            date={date}
-            onNavigate={setDate}
-            onSelectSlot={handleSelectSlot}
-            style={{ flex: 1 }}
-          />
+          {/* Conditional: YearView or BigCalendar */}
+          {currentView === "year" ? (
+            <YearView date={date} onChange={setDate} />
+          ) : (
+            <BigCalendar
+  localizer={localizer}
+  events={filteredEvents}
+  selectable
+  startAccessor="start"
+  endAccessor="end"
+  view={currentView}
+  onView={setCurrentView}
+  date={date}
+  onNavigate={setDate}
+  onSelectSlot={handleSelectSlot}
+  style={{ flex: 1 }}
+/>
+
+          )}
         </main>
       </div>
 
-      {/* Floating Add Button */}
+      {/* Floating Button */}
       <button className="floating-create-btn">
         <AddIcon style={{ fontSize: 28 }} />
       </button>
@@ -184,16 +227,8 @@ const Calendar = () => {
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
-            <button className="save" type="submit">
-              Save
-            </button>
-            <button
-              className="cancel"
-              type="button"
-              onClick={() => setSelectedSlot(null)}
-            >
-              Cancel
-            </button>
+            <button className="save" type="submit">Save</button>
+            <button className="cancel" type="button" onClick={() => setSelectedSlot(null)}>Cancel</button>
           </form>
         </div>
       )}
