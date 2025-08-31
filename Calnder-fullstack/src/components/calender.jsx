@@ -17,61 +17,82 @@ const Calendar = () => {
   const [currentView, setCurrentView] = useState(Views.WEEK);
 
   // Load Google OAuth token and user info
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("access_token");
-  const userInfo = params.get("user");
-
-  if (token && userInfo) {
-    const userObj = JSON.parse(decodeURIComponent(userInfo));
-    setAccessToken(token);
-    setUser(userObj);
-
-    // Save to localStorage
-    localStorage.setItem("accessToken", token);
-    localStorage.setItem("user", JSON.stringify(userObj));
-
-    // Remove query params from URL
-    window.history.replaceState({}, document.title, "/");
-  } else {
-    // Load from localStorage if available
-    const storedToken = localStorage.getItem("accessToken");
-    const storedUser = localStorage.getItem("user");
-    if (storedToken && storedUser) {
-      setAccessToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-  }
-}, []);
-
-
-  // Fetch events from backend
   useEffect(() => {
-    fetchEvents();
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("access_token");
+    const userInfo = params.get("user");
+
+    if (token && userInfo) {
+      const userObj = JSON.parse(decodeURIComponent(userInfo));
+      setAccessToken(token);
+      setUser(userObj);
+
+      localStorage.setItem("accessToken", token);
+      localStorage.setItem("user", JSON.stringify(userObj));
+
+      window.history.replaceState({}, document.title, "/");
+    } else {
+      const storedToken = localStorage.getItem("accessToken");
+      const storedUser = localStorage.getItem("user");
+      if (storedToken && storedUser) {
+        setAccessToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      }
+    }
   }, []);
 
+  // Fetch events from backend and Google Calendar
+  useEffect(() => {
+    fetchEvents();
+  }, [accessToken]);
+
   const fetchEvents = async () => {
+    let allEvents = [];
     try {
+      // Backend events
       const res = await axios.get(`${BACKEND}/api/events`);
-      setEvents(res.data.map(e => ({ ...e, start: new Date(e.start), end: new Date(e.end) })));
+      const backendEvents = res.data.map(e => ({
+        ...e,
+        start: new Date(e.start),
+        end: new Date(e.end),
+        color: e.color || "#1a73e8"
+      }));
+      allEvents = [...backendEvents];
+
+      // Google Calendar events
+      if (accessToken) {
+        const gcalRes = await axios.get("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        const gcalEvents = gcalRes.data.items.map(e => ({
+          _id: e.id,
+          title: e.summary,
+          description: e.description,
+          location: e.location,
+          start: new Date(e.start.dateTime || e.start.date),
+          end: new Date(e.end.dateTime || e.end.date),
+          color: "#34A853" // Google Calendar events in green
+        }));
+        allEvents = [...allEvents, ...gcalEvents];
+      }
+
+      setEvents(allEvents);
     } catch (err) {
       console.error("Fetch events error:", err);
     }
   };
 
-  // Select a slot for new event
   const handleSelectSlot = (slot) => {
     setSelectedSlot(slot);
     setForm({ _id: "", title: "", description: "", location: "", type: "event", color: "#1a73e8", guests: "" });
   };
 
-  // Select an existing event
   const handleSelectEvent = (event) => {
     setSelectedSlot({ start: event.start, end: event.end });
     setForm({ ...event });
   };
 
-  // Save or update event
+  // Save event to backend and Google Calendar
   const handleSaveEvent = async (ev) => {
     ev.preventDefault();
     if (!selectedSlot) return;
@@ -83,22 +104,33 @@ useEffect(() => {
       type: form.type,
       color: form.color,
       guests: form.guests,
-      start: selectedSlot.start,
-      end: selectedSlot.end,
+      start: selectedSlot.start.toISOString(),
+      end: selectedSlot.end.toISOString(),
     };
 
     try {
-      let res;
-      if (form._id) {
-        res = await axios.put(`${BACKEND}/api/events/${form._id}`, payload);
-        const updated = res.data;
-        setEvents(events.map(evnt => evnt._id === form._id ? { ...updated, start: new Date(updated.start), end: new Date(updated.end) } : evnt));
-      } else {
-        res = await axios.post(`${BACKEND}/api/events`, payload);
-        const created = res.data;
-        setEvents([...events, { ...created, start: new Date(created.start), end: new Date(created.end) }]);
+      // Save to backend
+      const res = await axios.post(`${BACKEND}/api/events`, payload);
+      
+      const savedEvent = res.data;
+
+      // Save to Google Calendar
+      if (accessToken) {
+        await axios.post(
+          "https://www.googleapis.com/calendar/v3/calendars/primary/events",
+          {
+            summary: payload.title,
+            description: payload.description,
+            location: payload.location,
+            start: { dateTime: payload.start },
+            end: { dateTime: payload.end },
+            attendees: payload.guests?.split(",").map(email => ({ email: email.trim() })),
+          },
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
       }
 
+      setEvents([...events, { ...savedEvent, start: new Date(savedEvent.start), end: new Date(savedEvent.end) }]);
       setSelectedSlot(null);
       setForm({ _id: "", title: "", description: "", location: "", type: "event", color: "#1a73e8", guests: "" });
     } catch (err) {
@@ -107,7 +139,6 @@ useEffect(() => {
     }
   };
 
-  // Delete event
   const handleDeleteEvent = async () => {
     if (!form._id) return;
     try {
@@ -152,18 +183,17 @@ useEffect(() => {
         <div className="event-popup">
           <h3>{form._id ? "Edit Event" : "Add Event"}</h3>
           <form onSubmit={handleSaveEvent}>
-  <input type="text" placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
-  <input type="text" placeholder="Location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
-  <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-  <input type="text" placeholder="Guests (comma separated)" value={form.guests} onChange={e => setForm({ ...form, guests: e.target.value })} />
-  <input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
-  <div style={{ marginTop: 10 }}>
-    <button type="submit">Save</button>
-    {form._id && <button type="button" onClick={handleDeleteEvent} style={{ marginLeft: 10 }}>Delete</button>}
-    <button type="button" onClick={() => setSelectedSlot(null)} style={{ marginLeft: 10 }}>Cancel</button>
-  </div>
-</form>
-
+            <input type="text" placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
+            <input type="text" placeholder="Location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
+            <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+            <input type="text" placeholder="Guests (comma separated)" value={form.guests} onChange={e => setForm({ ...form, guests: e.target.value })} />
+            <input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
+            <div style={{ marginTop: 10 }}>
+              <button type="submit">Save</button>
+              {form._id && <button type="button" onClick={handleDeleteEvent} style={{ marginLeft: 10 }}>Delete</button>}
+              <button type="button" onClick={() => setSelectedSlot(null)} style={{ marginLeft: 10 }}>Cancel</button>
+            </div>
+          </form>
         </div>
       )}
     </div>
