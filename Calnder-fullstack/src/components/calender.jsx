@@ -3,7 +3,7 @@ import axios from "axios";
 import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import "./calendar.css";
+import "./calender.css";
 
 const localizer = momentLocalizer(moment);
 const BACKEND = "https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev";
