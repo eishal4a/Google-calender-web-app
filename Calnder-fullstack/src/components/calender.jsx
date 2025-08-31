@@ -127,58 +127,57 @@ const Calendar = () => {
   };
 
   const handleSaveEvent = async (ev) => {
-    ev.preventDefault();
-    if (!selectedSlot) return;
+  ev.preventDefault();
+  if (!selectedSlot) return;
 
-    const payload = {
-      title: form.title,
-      description: form.description,
-      guests: form.guests,
-      location: form.location,
-      type: form.type,
-      color: form.color,
-      start: selectedSlot.start,
-      end: selectedSlot.end,
-    };
-
-    const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-
-    try {
-      let res, createdOrUpdated;
-      // Save to backend
-      if (form._id) {
-        res = await axios.put(`${BACKEND}/api/events/${form._id}`, payload, { headers });
-        createdOrUpdated = res.data || { ...payload, _id: form._id };
-        setEvents(events.map(evnt => evnt._id === form._id ? { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) } : evnt));
-      } else {
-        res = await axios.post(`${BACKEND}/api/events`, payload, { headers });
-        createdOrUpdated = res.data || { ...payload, _id: String(Date.now()) };
-        setEvents([...events, { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }]);
-      }
-
-      // Save to Google Calendar if user connected
-      if (accessToken) {
-        await axios.post(
-          "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-          {
-            summary: payload.title,
-            description: payload.description,
-            start: { dateTime: payload.start },
-            end: { dateTime: payload.end },
-            location: payload.location,
-            attendees: payload.guests.split(",").map(email => ({ email: email.trim() })),
-          },
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      }
-
-      setSelectedSlot(null);
-      setForm({ _id: undefined, title: "", description: "", guests: "", location: "", type: "event", color: "#1a73e8" });
-    } catch (err) {
-      console.error("Error saving event:", err);
-      alert("Failed to save event. Check console for details.");
-    }
+  const payload = {
+    title: form.title,
+    description: form.description,
+    guests: form.guests,
+    location: form.location,
+    type: form.type,
+    color: form.color,
+    start: selectedSlot.start,
+    end: selectedSlot.end,
   };
+
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+
+  try {
+    let res;
+    if (form._id) {
+      // Update existing event
+      res = await axios.put(`${BACKEND}/api/events/${form._id}`, payload, { headers });
+      const updated = res.data;
+      setEvents(events.map(evnt =>
+        evnt._id === form._id
+          ? { ...updated, start: new Date(updated.start), end: new Date(updated.end) }
+          : evnt
+      ));
+    } else {
+      // Create new event
+      res = await axios.post(`${BACKEND}/api/events`, payload, { headers });
+      const created = res.data;
+      setEvents([...events, { ...created, start: new Date(created.start), end: new Date(created.end) }]);
+    }
+
+    // Reset form
+    setSelectedSlot(null);
+    setForm({
+      _id: undefined,
+      title: "",
+      description: "",
+      guests: "",
+      location: "",
+      type: "event",
+      color: "#1a73e8",
+    });
+
+  } catch (err) {
+    console.error("Error saving event:", err);
+    alert("Failed to save event. Check console for details.");
+  }
+};
 
   const handleDeleteEvent = async () => {
     if (!form._id) return;
