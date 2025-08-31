@@ -135,7 +135,7 @@ const Calendar = () => {
       setForm({ _id: "", title: "", description: "", location: "", type: "event", color: "#1a73e8", guests: "" });
     } catch (err) {
       console.error("Save event error:", err);
-      alert("Failed to save event. Check console.");
+     
     }
   };
 
