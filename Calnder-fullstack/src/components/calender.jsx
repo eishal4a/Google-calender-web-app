@@ -127,7 +127,7 @@ const Calendar = () => {
       start: selectedSlot.start,
       end: selectedSlot.end,
     };
-
+res = await axios.post(`${BACKEND}/api/events`, payload, { headers });
     const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
 
     try {
