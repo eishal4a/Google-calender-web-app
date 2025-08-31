@@ -93,51 +93,38 @@ const Calendar = () => {
   };
 
   // Save event to backend and Google Calendar
-  const handleSaveEvent = async (ev) => {
-    ev.preventDefault();
-    if (!selectedSlot) return;
+const handleSaveEvent = async (ev) => {
+  ev.preventDefault();
+  if (!selectedSlot) return;
 
-    const payload = {
-      title: form.title,
-      description: form.description,
-      location: form.location,
-      type: form.type,
-      color: form.color,
-      guests: form.guests,
-      start: selectedSlot.start.toISOString(),
-      end: selectedSlot.end.toISOString(),
-    };
-
-    try {
-      // Save to backend
-      const res = await axios.post(`${BACKEND}/api/events`, payload);
-      
-      const savedEvent = res.data;
-
-      // Save to Google Calendar
-      if (accessToken) {
-        await axios.post(
-          "https://www.googleapis.com/calendar/v3/calendars/primary/events",
-          {
-            summary: payload.title,
-            description: payload.description,
-            location: payload.location,
-            start: { dateTime: payload.start },
-            end: { dateTime: payload.end },
-            attendees: payload.guests?.split(",").map(email => ({ email: email.trim() })),
-          },
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-      }
-
-      setEvents([...events, { ...savedEvent, start: new Date(savedEvent.start), end: new Date(savedEvent.end) }]);
-      setSelectedSlot(null);
-      setForm({ _id: "", title: "", description: "", location: "", type: "event", color: "#1a73e8", guests: "" });
-    } catch (err) {
-      console.error("Save event error:", err);
-     
-    }
+  const payload = {
+    title: form.title,
+    description: form.description,
+    location: form.location,
+    type: form.type,
+    color: form.color,
+    guests: form.guests,
+    start: selectedSlot.start.toISOString(),
+    end: selectedSlot.end.toISOString(),
   };
+
+  try {
+    // Send access token in header
+    const res = await axios.post(`${BACKEND}/api/events`, payload, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    const savedEvent = res.data;
+
+    setEvents([...events, { ...savedEvent, start: new Date(savedEvent.start), end: new Date(savedEvent.end) }]);
+    setSelectedSlot(null);
+    setForm({ _id: "", title: "", description: "", location: "", type: "event", color: "#1a73e8", guests: "" });
+  } catch (err) {
+    console.error("Save event error:", err);
+    alert("Failed to save event. Check console.");
+  }
+};
+
 
   const handleDeleteEvent = async () => {
     if (!form._id) return;
