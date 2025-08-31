@@ -16,6 +16,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import AddIcon from "@mui/icons-material/Add";
 
 const localizer = momentLocalizer(moment);
+const BACKEND = "https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev";
+
 const Calendar = () => {
   const [events, setEvents] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null); 
@@ -24,7 +26,6 @@ const Calendar = () => {
   const [currentView, setCurrentView] = useState(Views.WEEK);
   const [showDropdown, setShowDropdown] = useState(false);
 
-  
   const [form, setForm] = useState({
     _id: undefined,
     title: "",
@@ -35,27 +36,25 @@ const Calendar = () => {
     color: "#1a73e8",
   });
 
+  const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+
   const filteredEvents = events.filter(e => visibleCalendars[e.title] ?? true);
 
   useEffect(() => {
     fetchEvents();
   }, []);
-// At top of your Calendar component
-const [user, setUser] = useState(null);
-const [accessToken, setAccessToken] = useState(null);
 
-useEffect(() => {
-  // Check URL params after redirect
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get("access_token");
-  const userInfo = params.get("user");
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("access_token");
+    const userInfo = params.get("user");
 
-  if (token && userInfo) {
-    setAccessToken(token);
-    setUser(JSON.parse(decodeURIComponent(userInfo)));
-  }
-}, []);
-
+    if (token && userInfo) {
+      setAccessToken(token);
+      setUser(JSON.parse(decodeURIComponent(userInfo)));
+    }
+  }, []);
 
   useEffect(() => {
     if (events.length > 0) {
@@ -67,10 +66,9 @@ useEffect(() => {
 
   const fetchEvents = async () => {
     try {
-      const res = await axios.get("https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/events");
-      
+      const res = await axios.get(`${BACKEND}/api/events`);
       setEvents(
-        res.data.map((e) => ({
+        res.data.map(e => ({
           ...e,
           start: new Date(e.start),
           end: new Date(e.end),
@@ -80,7 +78,6 @@ useEffect(() => {
       console.error("fetchEvents error:", err);
     }
   };
-
 
   const handleSelectSlot = (slot) => {
     setSelectedSlot({
@@ -105,7 +102,6 @@ useEffect(() => {
       end: event.end,
       isEditing: true,
     });
-
     setForm({
       _id: event._id, 
       title: event.title || "",
@@ -117,69 +113,64 @@ useEffect(() => {
     });
   };
 
-const handleSaveEvent = async (ev) => {
-  ev.preventDefault();
-  if (!selectedSlot) return;
-const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-const res = form._id
-  ? await axios.put(`${BACKEND}/api/events/${form._id}`, payload, { headers })
-  : await axios.post(`${BACKEND}/api/events`, payload, { headers });
+  const handleSaveEvent = async (ev) => {
+    ev.preventDefault();
+    if (!selectedSlot) return;
 
-  const payload = {
-    title: form.title,
-    description: form.description,
-    guests: form.guests,
-    location: form.location,
-    type: form.type,
-    color: form.color,
-    start: selectedSlot.start,
-    end: selectedSlot.end,
-  };
+    const payload = {
+      title: form.title,
+      description: form.description,
+      guests: form.guests,
+      location: form.location,
+      type: form.type,
+      color: form.color,
+      start: selectedSlot.start,
+      end: selectedSlot.end,
+    };
 
-  try {
-    let createdOrUpdated;
-    if (form._id) {
-      console.log(" Updating event:", form._id, payload);
-      const res = await axios.put(`https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/events/${form._id}`, payload);
-      createdOrUpdated = res.data || { ...payload, _id: form._id };
-      setEvents(events.map(evnt => evnt._id === form._id ? { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) } : evnt));
-    } else {
-      console.log(" Creating event:", payload);
-      const res = await axios.post("https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/events", payload);
-      createdOrUpdated = res.data || { ...payload, _id: String(Date.now()) };
-      setEvents([...events, { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }]);
+    const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+
+    try {
+      let res, createdOrUpdated;
+      if (form._id) {
+        res = await axios.put(`${BACKEND}/api/events/${form._id}`, payload, { headers });
+        createdOrUpdated = res.data || { ...payload, _id: form._id };
+        setEvents(events.map(evnt =>
+          evnt._id === form._id
+            ? { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }
+            : evnt
+        ));
+      } else {
+        res = await axios.post(`${BACKEND}/api/events`, payload, { headers });
+        createdOrUpdated = res.data || { ...payload, _id: String(Date.now()) };
+        setEvents([...events, { ...createdOrUpdated, start: new Date(createdOrUpdated.start), end: new Date(createdOrUpdated.end) }]);
+      }
+
+      setSelectedSlot(null);
+      setForm({
+        _id: undefined,
+        title: "",
+        description: "",
+        guests: "",
+        location: "",
+        type: "event",
+        color: "#1a73e8",
+      });
+    } catch (err) {
+      console.error("Error saving event:", err);
+      alert("Failed to save event. Check console for details.");
     }
-  } catch (err) {
-    console.error(" Error saving event:", err);
-  
-    setEvents([...events, { ...payload, _id: String(Date.now()), start: new Date(payload.start), end: new Date(payload.end) }]);
-  }
-
- 
-  setSelectedSlot(null);
-  setForm({
-    _id: undefined,
-    title: "",
-    description: "",
-    guests: "",
-    location: "",
-    type: "event",
-    color: "#1a73e8",
-  });
-};
+  };
 
   const handleDeleteEvent = async () => {
     if (!form._id) return;
-
     try {
-      await axios.delete(`https://26e2b6f8-4ec3-4832-ae51-db31c1a5b1bc-00-141z0r56gosoi.sisko.replit.dev/api/events/${form._id}`);
+      await axios.delete(`${BACKEND}/api/events/${form._id}`);
       setEvents(events.filter(evnt => evnt._id !== form._id));
     } catch (err) {
       console.error("Error deleting event:", err);
-    
       setEvents(events.filter(evnt => evnt._id !== form._id));
     }
-
     setSelectedSlot(null);
     setForm({
       _id: undefined,
@@ -192,21 +183,15 @@ const res = form._id
     });
   };
 
-
   const tileContent = ({ date: tileDate, view }) => {
     if (view === "month") {
       const dayEvents = filteredEvents.filter(
-        e =>
-          moment(tileDate).isSame(e.start, "day") ||
-          moment(tileDate).isBetween(e.start, e.end, "day", "[]")
+        e => moment(tileDate).isSame(e.start, "day") || moment(tileDate).isBetween(e.start, e.end, "day", "[]")
       );
-      if (dayEvents.length > 0) {
-        return <div className="event-dot" />;
-      }
+      if (dayEvents.length > 0) return <div className="event-dot" />;
     }
     return null;
   };
-
   return (
     <div className="calendar-wrapper">
       {/* Header */}
