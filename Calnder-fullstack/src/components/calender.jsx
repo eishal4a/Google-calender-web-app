@@ -17,15 +17,33 @@ const Calendar = () => {
   const [currentView, setCurrentView] = useState(Views.WEEK);
 
   // Load Google OAuth token and user info
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("access_token");
-    const userInfo = params.get("user");
-    if (token && userInfo) {
-      setAccessToken(token);
-      setUser(JSON.parse(decodeURIComponent(userInfo)));
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("access_token");
+  const userInfo = params.get("user");
+
+  if (token && userInfo) {
+    const userObj = JSON.parse(decodeURIComponent(userInfo));
+    setAccessToken(token);
+    setUser(userObj);
+
+    // Save to localStorage
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("user", JSON.stringify(userObj));
+
+    // Remove query params from URL
+    window.history.replaceState({}, document.title, "/");
+  } else {
+    // Load from localStorage if available
+    const storedToken = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
+    if (storedToken && storedUser) {
+      setAccessToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-  }, []);
+  }
+}, []);
+
 
   // Fetch events from backend
   useEffect(() => {
