@@ -133,14 +133,14 @@ const Calendar = () => {
       {selectedSlot && (
         <div className="event-popup">
           <h3>{form._id ? "Edit Event" : "Add Event"}</h3>
-          <form onSubmit={handleSaveEvent}>
+          <form >
             <input type="text" placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
             <input type="text" placeholder="Location" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
             <textarea placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
             <input type="text" placeholder="Guests (comma separated)" value={form.guests} onChange={e => setForm({ ...form, guests: e.target.value })} />
             <input type="color" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} />
             <div style={{ marginTop: 10 }}>
-              <button type="submit">Save</button>
+              <button type="submit" onSubmit={handleSaveEvent}>>Save</button>
               {form._id && <button type="button" onClick={handleDeleteEvent} style={{ marginLeft: 10 }}>Delete</button>}
               <button type="button" onClick={() => setSelectedSlot(null)} style={{ marginLeft: 10 }}>Cancel</button>
             </div>
