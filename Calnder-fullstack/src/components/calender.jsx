@@ -345,7 +345,7 @@ const Calendar = () => {
               <input type="color" value={form.color || "#1a73e8"} onChange={(e) => setForm({ ...form, color: e.target.value })} />
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-              <button className="save" type="submit">Save</button>
+              <button className="save" type="submit" onSubmit={handleSaveEvent}>Save</button>
               <button className="cancel" type="button" onClick={() => setSelectedSlot(null)}>Cancel</button>
               {selectedSlot?.isEditing && (
                 <button type="button" onClick={handleDeleteEvent} style={{ background: "red", color: "white", padding: "8px 12px", borderRadius: 6 }}>Delete</button>
