@@ -5,6 +5,7 @@ import moment from "moment";
 import CalendarMini from "react-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import "react-calendar/dist/Calendar.css";
+import { io } from "socket.io-client";
 import "./calender.css";
 
 const localizer = momentLocalizer(moment);
@@ -25,52 +26,65 @@ const Calendar = () => {
     tasks: true,
     holidays: true,
   });
+// Put this near the top, inside the component, before you use accessToken
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get("access_token");
+  const userInfo = params.get("user");
 
-  // Load Google token & user info from URL or localStorage
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get("access_token");
-    const userInfo = params.get("user");
-
-    if (token && userInfo) {
-      const userObj = JSON.parse(decodeURIComponent(userInfo));
-      setAccessToken(token);
-      setUser(userObj);
-      localStorage.setItem("accessToken", token);
-      localStorage.setItem("user", JSON.stringify(userObj));
-      window.history.replaceState({}, document.title, "/");
-    } else {
-      const storedToken = localStorage.getItem("accessToken");
-      const storedUser = localStorage.getItem("user");
-      if (storedToken && storedUser) {
-        setAccessToken(storedToken);
-        setUser(JSON.parse(storedUser));
-      }
+  if (token && userInfo) {
+    const userObj = JSON.parse(decodeURIComponent(userInfo));
+    setAccessToken(token);
+    setUser(userObj);
+    localStorage.setItem("accessToken", token);
+    localStorage.setItem("user", JSON.stringify(userObj));
+    // clean the URL
+    window.history.replaceState({}, document.title, "/");
+  } else {
+    const storedToken = localStorage.getItem("accessToken");
+    const storedUser = localStorage.getItem("user");
+    if (storedToken && storedUser) {
+      setAccessToken(storedToken);
+      setUser(JSON.parse(storedUser));
     }
-  }, []);
+  }
+}, []);
 
-  // Fetch events whenever accessToken changes
-  useEffect(() => {
+// ✅ define fetchEvents once
+const fetchEvents = async () => {
+  try {
+    const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+    const res = await axios.get(`${BACKEND}/api/events`, { headers });
+
+    const allEvents = res.data.map(e => ({
+      ...e,
+      start: new Date(e.start),
+      end: new Date(e.end),
+      color: e.color || "#1a73e8"
+    }));
+
+    setEvents(allEvents);
+  } catch (err) {
+    console.error("Fetch events error:", err);
+  }
+};
+
+// fetch events when accessToken changes
+useEffect(() => {
+  fetchEvents();
+}, [accessToken]);
+
+// socket.io real-time updates
+useEffect(() => {
+  const socket = io(BACKEND);
+
+  socket.on("calendarUpdate", () => {
+    console.log("🔔 Calendar updated → refetching events...");
     fetchEvents();
-  }, [accessToken]);
+  });
 
-  const fetchEvents = async () => {
-    try {
-      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
-      const res = await axios.get(`${BACKEND}/api/events`, { headers });
-
-      const allEvents = res.data.map(e => ({
-        ...e,
-        start: new Date(e.start),
-        end: new Date(e.end),
-        color: e.color || "#1a73e8"
-      }));
-
-      setEvents(allEvents);
-    } catch (err) {
-      console.error("Fetch events error:", err);
-    }
-  };
+  return () => socket.disconnect();
+}, []);
 
   const handleSelectSlot = (slot) => {
     setSelectedSlot(slot);
@@ -109,6 +123,9 @@ const Calendar = () => {
       console.error("Save event error:", err);
     }
   };
+
+
+
 const handleDeleteEvent = async () => {
   if (!form._id) return;
 
